@@ -1,4 +1,5 @@
 from telebot import types
+import json
 
 cards = {
     '1': "Туз♣️",      # крести
@@ -99,3 +100,14 @@ def create_game_buttons():
     button2 = types.KeyboardButton("Стоп! ✋🏼")
     markup.add(button1, button2)
     return markup
+
+
+def save(db):
+    with open('data/bd.json', 'w') as outfile:
+        json.dump(db, outfile)
+
+
+def load():
+
+  db = json.load(open("data/bd.json"))
+  return db

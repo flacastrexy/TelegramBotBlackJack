@@ -3,7 +3,6 @@ import telebot
 import random
 import func
 import db
-import json
 
 bot = telebot.TeleBot(config.TOKEN)
 db = db.db
@@ -18,7 +17,6 @@ db = db.db
 
 @bot.message_handler(commands=['start'])
 def welcome(message):
-    player_wins = 0
     hi_sticker = open('stickers/hi_21.webp', 'rb')
     bot.send_sticker(message.chat.id, hi_sticker)
     markup = func.create_new_game_buttons()
@@ -29,11 +27,10 @@ def welcome(message):
 
 @bot.message_handler(content_types=['text'])
 def send_message(message):
+    global db
     if message.chat.type == 'private':
-        global db
         if message.text == 'Начать игру!🎮':
-
-            db = json.load(open("bd.json"))
+            db = func.load()
 
             markup = func.create_game_buttons()
             if str(message.chat.id) not in db:
@@ -49,8 +46,7 @@ def send_message(message):
                 db[str(message.chat.id)]['score_croupier'] = 0
                 db[str(message.chat.id)]['cards_now'] = []
                 db[str(message.chat.id)]['cards_croupier'] = []
-
-            json.dump(db, open("bd.json", "w"))
+            func.save(db)
 
             # score = 0
             # score_croupier = 0
@@ -62,6 +58,7 @@ def send_message(message):
             random_croupier = random.randint(1, 52)
 
             db[str(message.chat.id)]['cards_now'].append(func.cards[str(random_card)])
+
             db[str(message.chat.id)]['cards_croupier'].append(func.cards[str(random_croupier)])
 
             # cards_now.append(func.cards[str(random_card)])
@@ -76,7 +73,10 @@ def send_message(message):
             bot.send_message(message.chat.id, "Ваши карты: " + ", ".join(db[str(message.chat.id)]['cards_now']) +
                              "\n Ваши очки:" + str(db[str(message.chat.id)]['score']),
                              reply_markup=markup)
+            func.save(db)
+
         if message.text == 'Еще! 👍🏼':
+            db = func.load()
             markup = func.create_game_buttons()
 
             random_card = random.randint(1, 52)
@@ -103,7 +103,10 @@ def send_message(message):
                 bot.send_message(message.chat.id, "Вы проиграли, попробуйте снова 😥\n Ваша статистика: " +
                                  str(db[str(message.chat.id)]['wins']), reply_markup=markup)
 
+            func.save(db)
+
         if message.text == 'Стоп! ✋🏼':
+            db = func.load()
             markup = func.create_new_game_buttons()
 
             bot.send_message(message.chat.id, "Карты крупье: " + ", ".join(db[str(message.chat.id)]['cards_croupier'])
@@ -118,12 +121,12 @@ def send_message(message):
                 db[str(message.chat.id)]['wins'] += 1
                 bot.send_message(message.chat.id, "Поздравляем! Вы выиграли! 👏🏻\nВаша статистика: "
                                  + str(db[str(message.chat.id)]['wins']))
-                json.dump(db, open("bd.json", "w"))
 
             elif db[str(message.chat.id)]['score'] == score_new:
                 bot.send_message(message.chat.id, "Ничья! 🧐")
             else:
                 bot.send_message(message.chat.id, "Вы проиграли, попробуйте снова 😥")
+            func.save(db)
 
 
 bot.polling(none_stop=True)
